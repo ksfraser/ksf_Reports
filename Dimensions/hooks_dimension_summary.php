@@ -1,0 +1,38 @@
+<?php
+/**
+ * Dimension Summary Hook
+ * 
+ * Maintains backward compatibility with legacy rep501.php
+ * Maps $_POST parameters to new DimensionSummary service
+ */
+
+declare(strict_types=1);
+
+use FA\Reports\Dimensions\DimensionSummary;
+use FA\Reports\Base\ParameterExtractor;
+
+function hooks_dimension_summary(): void
+{
+    global $db, $eventDispatcher;
+    
+    // Extract parameters
+    $extractor = new ParameterExtractor($_POST);
+    
+    $params = [
+        'from_dim' => $extractor->getInt('PARAM_0'),
+        'to_dim' => $extractor->getInt('PARAM_1'),
+        'show_balance' => $extractor->getInt('PARAM_2', 0),
+        'comments' => $extractor->getString('PARAM_3', ''),
+        'orientation' => $extractor->getInt('PARAM_4', 0),
+        'destination' => $extractor->getInt('PARAM_5', 0)
+    ];
+    
+    // Create and execute service
+    $service = new DimensionSummary($db, $eventDispatcher);
+    $service->generate($params);
+}
+
+// Auto-execute if called directly from legacy report
+if (basename($_SERVER['SCRIPT_FILENAME']) === 'rep501.php') {
+    hooks_dimension_summary();
+}
